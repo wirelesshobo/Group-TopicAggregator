@@ -55,6 +55,20 @@ foreach ($feed in $rssFeeds) {
             if (-not $desc) { $desc = $item.summary -as [string] }
             $link = $item.link
             if ($link -is [System.Xml.XmlElement]) { $link = $link.href }
+                # Handle title and description fields that may be XML elements
+                if ($item.title -is [System.Xml.XmlElement]) {
+                    $title = $item.title.InnerText
+                } else {
+                    $title = $item.title -as [string]
+                }
+                if ($item.description -is [System.Xml.XmlElement]) {
+                    $desc = $item.description.InnerText
+                } elseif ($item.summary -is [System.Xml.XmlElement]) {
+                    $desc = $item.summary.InnerText
+                } else {
+                    $desc = $item.description -as [string]
+                    if (-not $desc) { $desc = $item.summary -as [string] }
+                }
 
             # Get publish date (RSS: pubDate, Atom: published/updated)
             $pubDate = $null
@@ -98,6 +112,9 @@ $dateRange = if ($minDate -and $maxDate) {
     "No articles found in the last 7 days."
 }
 
+# Count the number of articles
+$articleCount = $results.Count
+
 $html = @"
 <!DOCTYPE html>
 <html lang='en'>
@@ -122,6 +139,7 @@ $html = @"
     <h1>Topic Aggregator Report</h1>
     <p>Generated on $(Get-Date -Format 'yyyy-MM-dd HH:mm')</p>
     <p><strong>$dateRange</strong></p>
+    <p><em>Number of articles: $articleCount</em></p>
     <div>
 "@
 
